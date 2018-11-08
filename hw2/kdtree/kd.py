@@ -117,7 +117,7 @@ for level in range(1, KDT.depth()+1):
     #plt.show()
     ax.set_xlim(-2, 10)
     ax.set_ylim(-2, 10)
-    ax.set_title('level %i' % level)
+    ax.set_title('level %i' % (level-1))
 
 # suptitle() adds a title to the entire figure
 fig.suptitle('KD-tree Result')
