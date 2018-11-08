@@ -101,7 +101,7 @@ class KDTree:
 # Read input		
 import pandas as pd
 head = ['x', 'y']
-points = pd.read_csv('points', sep=' ', header=None, names=head).values
+points = pd.read_csv('points.txt', sep=' ', header=None, names=head).values
 
 # Build KD-Tree
 KDT = KDTree(points, [-2, -2], [10, 10], -1)
