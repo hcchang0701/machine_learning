@@ -8,6 +8,7 @@
 
 
 import warnings; warnings.simplefilter('ignore')
+import numpy as np
 import pandas as pd
 df = pd.read_csv('Concrete_Data.csv')
 
@@ -53,23 +54,38 @@ print("Columns containing missing value:",
       df.columns[df.isna().any()].tolist())
 
 
-# ### Visualiaztion for 9 attributes
+# ## Standardization
+# * Standardize each column 
+# * $Z = \frac{X-\mu}{\sigma}$
 
 # In[8]:
+
+
+from sklearn.preprocessing import StandardScaler
+
+df_origin = df
+np_scaled = StandardScaler().fit_transform(df)
+df = pd.DataFrame(np_scaled, columns=df.columns)
+df.head()
+
+
+# ### Visualiaztion for 9 attributes
+
+# In[9]:
 
 
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-# In[9]:
+# In[10]:
 
 
 #g1 = sns.pairplot(df)
 #g1.savefig("pairplot.png")
 
 
-# In[10]:
+# In[11]:
 
 
 # Create a figure instance, and the two subplots
@@ -84,7 +100,7 @@ for i in range(0, inputNum):
 plt.show()
 
 
-# In[11]:
+# In[12]:
 
 
 # Create a figure instance, and the two subplots
@@ -105,7 +121,7 @@ plt.show()
 #     * 80% data for training
 #     * 20% data for testing
 
-# In[12]:
+# In[13]:
 
 
 X, y = df.iloc[:, 0], df.iloc[:, -1]
@@ -113,13 +129,15 @@ X, y = df.iloc[:, 0], df.iloc[:, -1]
 # X = X.values.reshape(-1, 1)
 # y = y.values.reshape(-1, 1)
 
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 row = ['lm1', 'lm2', 'lm3', 'lm4', 'lm5', 'lm6', 'lm7', 'lm8']
-col = ['MSE', 'Cor(R2-score)', 'bias', 'weight']
+col = ['MSE', 'Cor', 'R2', 'bias', 'weight']
+row = ['lm1', 'lm2', 'lm3', 'lm4', 'lm5', 'lm6', 'lm7', 'lm8']
+col = ['MSE', 'Cor', 'R2', 'bias', 'weight']
 regResult = pd.DataFrame(index=row, columns=col)
 
 
-# In[13]:
+# In[14]:
 
 
 from sklearn.model_selection import train_test_split
@@ -128,7 +146,7 @@ testCol = ['X_test', 'y_test']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 
-# In[14]:
+# In[15]:
 
 
 Train = pd.DataFrame(columns=trainCol)
@@ -140,7 +158,7 @@ Test.iloc[:, 0]=X_test.values
 Test.iloc[:, 1]=y_test.values
 
 
-# In[15]:
+# In[16]:
 
 
 X_train = X_train.values.reshape(-1, 1)
@@ -152,7 +170,7 @@ y_test = y_test.values.reshape(-1, 1)
 # ## Simple linear regression
 # * iteratively train linear model with each attribute
 
-# In[16]:
+# In[17]:
 
 
 # simple linear regression by sklearn function
@@ -174,15 +192,16 @@ plt.plot(X_test, y_pred_lm, color='blue', linewidth=3, label='linear model predi
 
 regResult.iloc[0, 0] = mean_squared_error(y_test, y_pred_lm)
 regResult.iloc[0, 1] = reg1.score(X_train, y_train)
-regResult.iloc[0, 2] = reg1.intercept_[0]
-regResult.iloc[0, 3] = reg1.coef_[0]
+regResult.iloc[0, 2] = r2_score(y_test, y_pred_lm)
+regResult.iloc[0, 3] = reg1.intercept_[0]
+regResult.iloc[0, 4] = reg1.coef_[0]
 regResult.assign()
 
 plt.legend()
 plt.show()
 
 
-# In[17]:
+# In[18]:
 
 
 # cf. testing data(blue) & predicted data(orange)
@@ -192,7 +211,7 @@ plt.show()
 #sns.lineplot(x='X_test', y='y_pred_lm', data=Test, color='orange')
 
 
-# In[18]:
+# In[19]:
 
 
 from sklearn.model_selection import train_test_split
@@ -201,7 +220,7 @@ from sklearn.linear_model import LinearRegression
 inputNum = 8
 
 axes = []
-fig, axes = plt.subplots(nrows=inputNum, sharey=True, figsize=(18, 30))
+fig, axes = plt.subplots(nrows=inputNum, sharey=True, figsize=(18, 40))
 
 for i in range(0, inputNum):
     #sns.regplot(x=df.columns[i], y=df.columns[inputNum], data=df, ax=axes[i])
@@ -241,22 +260,40 @@ for i in range(0, inputNum):
 
     regResult.iloc[i, 0] = mean_squared_error(y_test, y_pred_lm)
     regResult.iloc[i, 1] = reg1.score(X_train, y_train)
-    regResult.iloc[i, 2] = reg1.intercept_[0]
-    regResult.iloc[i, 3] = reg1.coef_[0]
+    regResult.iloc[i, 2] = r2_score(y_test, y_pred_lm)
+    regResult.iloc[i, 3] = reg1.intercept_[0]
+    regResult.iloc[i, 4] = reg1.coef_[0]
     regResult.assign()
 
     #plt.legend()
     #plt.show()
 
 
-# In[19]:
+# In[20]:
 
 
 regResult.assign()
 
 
-# In[ ]:
+# ## Find most relative features
+# * Choose the largest |R2-score| 
+
+# In[21]:
 
 
+regResult.sort_values(by='R2', ascending=False)
 
+
+# * The first attribute(Cement) has largest |R2-score|, so it's most relative to target
+
+# In[22]:
+
+
+sns.regplot(x=df_origin.columns[0], y=df_origin.columns[8], data=df_origin, marker='.')
+
+
+# In[23]:
+
+
+regResult.iloc[0:1]
 
