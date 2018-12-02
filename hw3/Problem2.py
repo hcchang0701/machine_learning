@@ -8,7 +8,9 @@
 
 
 import warnings; warnings.simplefilter('ignore')
+import numpy as np
 import pandas as pd
+from sklearn.metrics import mean_squared_error, r2_score
 df = pd.read_csv('Concrete_Data.csv')
 
 # rename columns
@@ -118,11 +120,6 @@ plt.show()
 # In[12]:
 
 
-X, y = df.iloc[:, 0], df.iloc[:, -1]
-
-# X = X.values.reshape(-1, 1)
-# y = y.values.reshape(-1, 1)
-
 from sklearn.metrics import mean_squared_error, r2_score
 row = ['lm1', 'lm2', 'lm3', 'lm4', 'lm5', 'lm6', 'lm7', 'lm8']
 col = ['MSE', 'Cor', 'R2', 'bias', 'weight']
@@ -133,125 +130,52 @@ regResult = pd.DataFrame(index=row, columns=col)
 
 
 from sklearn.model_selection import train_test_split
-trainCol = ['X_train', 'y_train']
-testCol = ['X_test', 'y_test']
+from sklearn.linear_model import LinearRegression
+
+inputNum = 8
+
+X, y = df.iloc[:, 0:inputNum], df.iloc[:, inputNum:inputNum+1]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
-
-# In[14]:
-
-
-Train = pd.DataFrame(columns=trainCol)
-Train.iloc[:, 0]=X_train.values
-Train.iloc[:, 1]=y_train.values
-
-Test = pd.DataFrame(columns=testCol)
-Test.iloc[:, 0]=X_test.values
-Test.iloc[:, 1]=y_test.values
-
-
-# In[15]:
-
-
-X_train = X_train.values.reshape(-1, 1)
-X_test = X_test.values.reshape(-1, 1)
-y_train = y_train.values.reshape(-1, 1)
-y_test = y_test.values.reshape(-1, 1)
 
 
 # ## Simple linear regression
 # * iteratively train linear model with each attribute
 
-# In[16]:
+# In[14]:
 
-
-# simple linear regression by sklearn function
-from sklearn.linear_model import LinearRegression
-
-# Train linear model by training set
-reg1 = LinearRegression().fit(X_train, y_train)
-y_pred_lm = reg1.predict(X_test)
-Test['y_pred_lm'] = y_pred_lm
-# The coefficients
-#print('Coefficients (weight): ', reg1.coef_)
-#print('Intercept (bias): ', reg1.intercept_)
-#print('linear model Correlation (R2-score): \n', reg1.score(X_train, y_train))
-
-
-# Plot outputs
-plt.scatter(X_test, y_test,  color='black', label='test data')
-plt.plot(X_test, y_pred_lm, color='blue', linewidth=3, label='linear model prediction')
-
-regResult.iloc[0, 0] = mean_squared_error(y_test, y_pred_lm)
-regResult.iloc[0, 1] = reg1.score(X_train, y_train)
-regResult.iloc[0, 2] = r2_score(y_test, y_pred_lm)
-regResult.iloc[0, 3] = reg1.intercept_[0]
-regResult.iloc[0, 4] = reg1.coef_[0]
-regResult.assign()
-
-plt.legend()
-plt.show()
-
-
-# In[17]:
-
-
-# cf. testing data(blue) & predicted data(orange)
-#sns.regplot(x=X_test.reshape(1,-1)[0], y=y_test.reshape(1,-1)[0])
-
-#sns.scatterplot(x='X_test', y='y_test', data=Test)
-#sns.lineplot(x='X_test', y='y_pred_lm', data=Test, color='orange')
-
-
-# In[18]:
-
-
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-
-inputNum = 8
 
 axes = []
 fig, axes = plt.subplots(nrows=inputNum, sharey=True, figsize=(18, 30))
 
+
 for i in range(0, inputNum):
     #sns.regplot(x=df.columns[i], y=df.columns[inputNum], data=df, ax=axes[i])
-
-
-    X, y = df.iloc[:, i], df.iloc[:, -1]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    
     #df2 = pd.concat([X_train, X_test, y_train, y_test], axis=1)
     Train = pd.concat([X_train, y_train], axis=1)
     Test = pd.concat([X_test, y_test], axis=1)
     
-    X_train = X_train.values.reshape(-1, 1)
-    X_test = X_test.values.reshape(-1, 1)
-    y_train = y_train.values.reshape(-1, 1)
-    y_test = y_test.values.reshape(-1, 1)
-
+    
 
 
     ### simple linear regression by sklearn function
 
     # Train linear model by training set
-    reg1 = LinearRegression().fit(X_train, y_train)
-    y_pred_lm = reg1.predict(X_test)
+    reg1 = LinearRegression().fit(X_train.iloc[:, i:i+1], y_train)
+    y_pred_lm = reg1.predict(X_test.iloc[:, i:i+1])
     Test['y_pred_lm'] = y_pred_lm
 
-    # Plot outputs
-    #sns.scatterplot(x=X_test.reshape(1,-1)[0], y=y_test.reshape(1,-1)[0], ax=axes[i])
-    #sns.regplot(x=X_test.reshape(1,-1)[0], y=y_pred_lm.reshape(1,-1)[0], ax=axes[i])
-    
-    sns.regplot(x=Test.columns[0], y=Test.columns[2], 
+    # Plot outputs    
+    sns.regplot(x=Test.columns[i], y='y_pred_lm', 
                 data=Test, ax=axes[i], label='regression', marker='.')
-    sns.scatterplot(x=Test.columns[0], y=Test.columns[1], 
+    sns.scatterplot(x=Test.columns[i], y='Concrete compressive strength', 
                     data=Test, ax=axes[i], label='scatter')
 
 
     #plt.plot(X_test, y_pred_lm, color='blue', linewidth=3)
 
     regResult.iloc[i, 0] = mean_squared_error(y_test, y_pred_lm)
-    regResult.iloc[i, 1] = reg1.score(X_train, y_train)
+    regResult.iloc[i, 1] = reg1.score(X_train.iloc[:, i:i+1], y_train)
     regResult.iloc[i, 2] = r2_score(y_test, y_pred_lm)
     regResult.iloc[i, 3] = reg1.intercept_[0]
     regResult.iloc[i, 4] = reg1.coef_[0]
@@ -261,13 +185,13 @@ for i in range(0, inputNum):
     #plt.show()
 
 
-# In[19]:
+# In[15]:
 
 
 regResult.assign()
 
 
-# In[20]:
+# In[16]:
 
 
 max(regResult['Cor']), max(regResult['R2'])
@@ -285,13 +209,13 @@ max(regResult['Cor']), max(regResult['R2'])
 
 # ### Refresh Data
 
-# In[178]:
+# In[17]:
 
 
 df.assign().head()
 
 
-# In[179]:
+# In[18]:
 
 
 from sklearn.preprocessing import StandardScaler
@@ -301,14 +225,16 @@ df_normalized = pd.DataFrame(np_scaled, columns=df.columns)
 df_normalized.head()
 
 
-# In[180]:
+# In[19]:
 
 
-X, y = df.iloc[:, 0:-1], df.iloc[:, -1]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+#X, y = df.iloc[:, 0:-1], df.iloc[:, -1]
+#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+Train = pd.concat([X_train, y_train], axis=1)
+Test = pd.concat([X_test, y_test], axis=1)
 
 
-# In[181]:
+# In[20]:
 
 
 X_train.head()
@@ -316,7 +242,7 @@ X_train.head()
 
 # ### Gradient Descent 
 
-# In[183]:
+# In[25]:
 
 
 # Gradient Descent 
@@ -325,13 +251,14 @@ def descent(X, y, b_current, m_current, learning_rate):
     m_gradient = 0
     N = float(X.shape[0])
     for i in range(0, X.shape[0]):
-        b_gradient += -(2/N) * (y.iloc[i] - ((m_current * X.iloc[i]) + b_current))
-        m_gradient += -(2/N) * X.iloc[i] * (y.iloc[i] - ((m_current * X.iloc[i]) + b_current))
+        b_gradient += -(2/N) * (y.iloc[i][0] - ((m_current * X.iloc[i][0]) + b_current))
+        m_gradient += -(2/N) * X.iloc[i][0] * (y.iloc[i][0] - ((m_current * X.iloc[i][0]) + b_current))
     new_b = b_current - (learning_rate * b_gradient)
     new_m = m_current - (learning_rate * m_gradient)
-    return float(new_b), float(new_m), float(learning_rate * b_gradient), float(learning_rate * m_gradient)
+    return new_b, new_m, learning_rate * b_gradient, learning_rate * m_gradient
+    #return float(new_b), float(new_m), float(learning_rate * b_gradient), float(learning_rate * m_gradient)
 
-def gd(X, y, starting_b=0, starting_m=0, learning_rate=0.01, epochs=1000):
+def gd(X, y, starting_b=0, starting_m=0, learning_rate=0.01, epochs=2000):
     b = starting_b
     m = starting_m
     step1 = 0
@@ -339,13 +266,15 @@ def gd(X, y, starting_b=0, starting_m=0, learning_rate=0.01, epochs=1000):
     stopThreshold = 0.000001
     for i in range(epochs):
         b, m, step1, step2 = descent(X, y, b, m, learning_rate)
+        #print(b, m, step1, step2)
         if abs(step1) < stopThreshold or abs(step2) < stopThreshold:
             print(b, m, step1, step2)
+            print("epoch: ", i)
             break
     return b, m
 
 
-# In[ ]:
+# In[26]:
 
 
 # BB: Bias (w0)
@@ -353,66 +282,59 @@ def gd(X, y, starting_b=0, starting_m=0, learning_rate=0.01, epochs=1000):
 BB, MM = gd(X_train.iloc[:, 0:1], y_train)
 
 
-# In[ ]:
+# In[27]:
 
 
 print(BB, MM)
 
 
-# ### Prediction & Standardize the predicted data
+# ### Prediction
 
-# In[ ]:
+# In[28]:
 
 
 #from sklearn.preprocessing import StandardScaler
 
 # fit test data to our gd model
 y_pred_gd = X_test.iloc[:, 0:1]*MM+BB
-
-# standardize predicted data
-np_scaled = StandardScaler().fit_transform(y_pred_gd)
-y_pred_gd2 = pd.DataFrame(np_scaled, columns=y_pred_gd.columns)
-y_pred_gd2.head()
+Test['y_pred_gd'] = X_test.iloc[:, 0:1]*MM+BB
 
 
-# In[ ]:
+# In[29]:
 
 
 # check mean=0, std=1
-float(y_pred_gd2.mean()), float(y_pred_gd2.std())
+print(float(y_pred_gd.mean()), float(y_pred_gd.std()))
 
 
 # ### Plot the result
 
-# In[ ]:
+# In[43]:
 
 
 x1 = np.linspace(-3, 3, 5000)
 
-#plt.plot(x1, x1, label='y=x')
-#for i, c in enumerate(clf.coef_):
-plt.plot(x1, x1*MM + BB, label='ideal gd regression line')
-plt.plot(X_test.iloc[:, 0:1], y_pred_gd2, label='gd regression point')
-plt.scatter(X_test.iloc[:, 0:1], y_test, label='test data')
-plt.legend()
-plt.show()
+sns.lineplot(x1, x1*MM + BB, label='ideal gd regression line', linewidth=5)
+sns.regplot(x=Test.columns[0], y='y_pred_gd', 
+                data=Test, label='gd regressor pred_data', marker='.')
+sns.scatterplot(x=Test.columns[0], y='Concrete compressive strength', 
+                data=Test, label='test_data')
 
 
-# In[ ]:
+# In[32]:
 
 
 # result
-
-r2_score(y_pred_gd2, y_test)
-
-
-# In[ ]:
+print(r2_score(y_test, y_pred_gd))
 
 
-regResult.loc['gd'] = 0, 0, r2_score(y_pred_gd2, y_test), BB, MM
+# In[36]:
 
 
-# In[ ]:
+regResult.loc['gd'] = mean_squared_error(y_test, y_pred_gd), 0, r2_score(y_test, y_pred_gd), BB, MM
+
+
+# In[37]:
 
 
 regResult.assign()
@@ -424,10 +346,52 @@ regResult.assign()
 
 
 
+# ## cf. Problem1 & Problem2
+# * 可看到每一項的都差不多(誤差在0.01的等級)
+# * 造成兩種方法數值誤差的可能性
+#     * 浮點運算誤差
+#     * 我們 Gradient Descenet 的 stopThreshold 設的比較小，可能提早跳出迴圈
+
+# In[38]:
+
+
+regResult.loc[['lm1','gd']].assign()
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
 # ### 這下面是 sklearn 的 Stochastic Gradient Descent Regressor
 # * 用全部 8 個 input attribute 下去 train，r2_score 可到 0.4
 
-# In[26]:
+# In[ ]:
 
 
 import numpy as np
@@ -436,22 +400,22 @@ clf = linear_model.SGDRegressor(max_iter=1000, tol=1e-3)
 clf.fit(X_train.iloc[:,0:8], y_train)
 
 
-# In[159]:
+# In[ ]:
 
 
 y_pred_sgd = clf.predict(X_test)
 
 
-# In[162]:
+# In[ ]:
 
 
 print('Coefficients (weight): ', clf.coef_)
 print('\nIntercept (bias): ', clf.intercept_)
 print('SGD Correlation: ', clf.score(X_train.iloc[:, 0:8], y_train))
-print('SGD R2-score: ', r2_score(y_pred_sgd, y_test))
+print('SGD R2-score: ', r2_score(y_test, y_pred_sgd))
 
 
-# In[163]:
+# In[ ]:
 
 
 x1 = np.linspace(-3, 3, 5000)
@@ -461,6 +425,12 @@ for i, c in enumerate(clf.coef_):
     plt.plot(x1, c*x1 + clf.intercept_, label='regression'+str(i))
 plt.legend()
 plt.show()
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
