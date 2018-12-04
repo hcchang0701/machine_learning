@@ -101,7 +101,7 @@ class KDTree:
 # Read input		
 import pandas as pd
 head = ['x', 'y']
-points = pd.read_csv('points', sep=' ', header=None, names=head).values
+points = pd.read_csv('points.txt', sep=' ', header=None, names=head).values
 
 # Build KD-Tree
 KDT = KDTree(points, [-2, -2], [10, 10], -1)
@@ -117,7 +117,7 @@ for level in range(1, KDT.depth()+1):
     #plt.show()
     ax.set_xlim(-2, 10)
     ax.set_ylim(-2, 10)
-    ax.set_title('level %i' % level)
+    ax.set_title('level %i' % (level-1))
 
 # suptitle() adds a title to the entire figure
 fig.suptitle('KD-tree Result')
