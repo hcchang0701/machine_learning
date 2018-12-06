@@ -11,6 +11,10 @@
 ## Problem3
 * **multi**-var LR with own gradient descent
   * The code, MSE, R2, and the accuracy for problem 3
+  
+## Problem3_wj
+* **multi**-var LR with own gradient descent
+  * Using individual wj to be updated in each iteration, rather than **w** vector
 
 ## Problem4
 * Polynomial Regression with own gradient descent
